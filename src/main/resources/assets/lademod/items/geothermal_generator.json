@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "lademod:block/geothermal_generator"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "lademod:block/netherpearl_block"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "item.lademod.netherpearl": "§4Nether Pearl",
+  "item.lademod.netherpearl_dust": "§4Nether Pearl Dust",
+  "item.lademod.steam_bucket": "§8Steam Bucket",
+
+  "block.lademod.netherpearl_block":  "§4Nether Pearl Block",
+  "block.lademod.geothermal_generator":  "§7Geothermal Generator",
+  "block.lademod.fluid_cable":  "§1Fluid Cable",
+
+  "fluid_type.lademod.steam": "§8Steam",
+
+  "itemgroup.ladestuff": "§1LadeStuff",
+
+  "tooltip.lademod.geogen.capacity": " / %s mb",
+
+  "tooltip.lademod.geogen.fluid1": "%s ",
+
+  "tooltip.lademod.geogen.fluid2": "%s ",
+
+  "tooltip.lademod.geogen.fluid3": "%s "
+}

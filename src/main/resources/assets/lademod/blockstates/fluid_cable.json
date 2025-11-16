@@ -1,0 +1,103 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "lademod:block/fluid_cable_core"
+      }
+    },
+    {
+      "when": { "north": "true" , "pull_north":  "false"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm",
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "east": "true", "pull_east":  "false"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm",
+        "y": 90,
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "south": "true", "pull_south":  "false"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm",
+        "y": 180,
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "west": "true", "pull_west":  "false"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm",
+        "y": 270,
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "up": "true", "pull_up":  "false"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm",
+        "x": 270,
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "down": "true", "pull_down":  "false"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm",
+        "x": 90,
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "north": "true", "pull_north": "true"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm_pull",
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "east": "true" , "pull_east": "true"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm_pull",
+        "y": 90,
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "south": "true" , "pull_south": "true"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm_pull",
+        "y": 180,
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "west": "true" , "pull_west": "true"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm_pull",
+        "y": 270,
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "up": "true" , "pull_up": "true"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm_pull",
+        "x": 270,
+        "uvlock": true
+      }
+    },
+    {
+      "when": { "down": "true" , "pull_down": "true"},
+      "apply": {
+        "model": "lademod:block/fluid_cable_arm_pull",
+        "x": 90,
+        "uvlock": true
+      }
+    }
+  ]
+}

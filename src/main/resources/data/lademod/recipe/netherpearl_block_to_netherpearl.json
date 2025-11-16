@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "lademod:netherpearl_block"
+    }
+  ],
+  "result": {
+    "id": "lademod:netherpearl_dust",
+    "count": 9
+  }
+}

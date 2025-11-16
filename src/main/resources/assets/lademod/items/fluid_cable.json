@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "lademod:block/fluid_cable_core"
+  }
+}

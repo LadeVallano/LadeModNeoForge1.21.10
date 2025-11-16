@@ -1,0 +1,12 @@
+{
+  "variants":{
+    "": {
+      "model": "lademod:block/geothermal_generator"
+    },
+    "lit=true, facing=east": {
+      "model": "lademod:block/lit_geothermal_generator"
+    }
+
+  }
+
+}

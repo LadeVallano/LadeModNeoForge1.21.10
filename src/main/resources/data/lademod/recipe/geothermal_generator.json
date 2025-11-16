@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IRI",
+    "CDC",
+    "PHP"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "C": "minecraft:coal",
+    "D":  "minecraft:diamond",
+    "H": "minecraft:hopper",
+    "P": "minecraft:copper_ingot",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "id": "lademod:geothermal_generator",
+    "count": 1
+  }
+}

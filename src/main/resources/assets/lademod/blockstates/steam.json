@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "level=0":  { "model": "lademod:block/steam" },
+    "level=1":  { "model": "lademod:block/steam" },
+    "level=2":  { "model": "lademod:block/steam" },
+    "level=3":  { "model": "lademod:block/steam" },
+    "level=4":  { "model": "lademod:block/steam" },
+    "level=5":  { "model": "lademod:block/steam" },
+    "level=6":  { "model": "lademod:block/steam" },
+    "level=7":  { "model": "lademod:block/steam" },
+    "level=8":  { "model": "lademod:block/steam" },
+    "level=9":  { "model": "lademod:block/steam" },
+    "level=10": { "model": "lademod:block/steam" },
+    "level=11": { "model": "lademod:block/steam" },
+    "level=12": { "model": "lademod:block/steam" },
+    "level=13": { "model": "lademod:block/steam" },
+    "level=14": { "model": "lademod:block/steam" },
+    "level=15": { "model": "lademod:block/steam" }
+  }
+}
