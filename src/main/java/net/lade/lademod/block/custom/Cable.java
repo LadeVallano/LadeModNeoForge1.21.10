@@ -2,7 +2,6 @@ package net.lade.lademod.block.custom;
 
 import net.lade.lademod.ResourceNetwork.ResourceNetwork;
 import net.lade.lademod.block.entity.CableEntity;
-import net.lade.lademod.block.entity.FluidCableEntity;
 import net.lade.lademod.block.entity.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -16,6 +15,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -23,19 +23,22 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.resource.Resource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 
-public abstract class Cable<R extends Resource> extends Block implements EntityBlock {
+
+public abstract class Cable<R extends Resource> extends Block implements EntityBlock, SimpleWaterloggedBlock {
 
     public static final BooleanProperty NORTH = BlockStateProperties.NORTH;
     public static final BooleanProperty SOUTH = BlockStateProperties.SOUTH;
@@ -51,7 +54,9 @@ public abstract class Cable<R extends Resource> extends Block implements EntityB
     public static final BooleanProperty PULL_UP = BooleanProperty.create("pull_up");
     public static final BooleanProperty PULL_DOWN = BooleanProperty.create("pull_down");
 
-    public static final BooleanProperty[] ALL_PROPERTIES = new BooleanProperty[]{NORTH, SOUTH, EAST, WEST, UP, DOWN, PULL_NORTH, PULL_SOUTH, PULL_EAST, PULL_WEST, PULL_UP, PULL_DOWN};
+    public static final BooleanProperty[] ALL_CONNECT_PROPERTIES = new BooleanProperty[]{NORTH, SOUTH, EAST, WEST, UP, DOWN, PULL_NORTH, PULL_SOUTH, PULL_EAST, PULL_WEST, PULL_UP, PULL_DOWN};
+
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     private static final VoxelShape CORE_SHAPE = Block.box(6, 6, 6, 10, 10, 10);
 
@@ -76,10 +81,18 @@ public abstract class Cable<R extends Resource> extends Block implements EntityB
     }
 
     @Override
+    protected @NotNull FluidState getFluidState(BlockState state) {
+        if (state.getValue(WATERLOGGED)) {
+            return Fluids.WATER.defaultFluidState();
+        }
+        return super.getFluidState(state);
+    }
+
+    @Override
     protected @NotNull VoxelShape getShape(@NotNull BlockState blockState, @NotNull BlockGetter blockGetter, @NotNull BlockPos blockPos, @NotNull CollisionContext collisionContext) {
         VoxelShape shape = CORE_SHAPE;
-        for (int i = 0; i < ALL_PROPERTIES.length; i++) {
-            shape = voxelFromProp(blockState, shape, ALL_SHAPES[i], ALL_PROPERTIES[i]);
+        for (int i = 0; i < ALL_CONNECT_PROPERTIES.length; i++) {
+            shape = voxelFromProp(blockState, shape, ALL_SHAPES[i], ALL_CONNECT_PROPERTIES[i]);
         }
         return shape;
     }
@@ -93,29 +106,29 @@ public abstract class Cable<R extends Resource> extends Block implements EntityB
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NotNull Builder<Block, BlockState> builder) {
-        builder.add(NORTH, EAST, SOUTH, WEST, UP, DOWN, PULL_NORTH, PULL_EAST, PULL_SOUTH, PULL_WEST, PULL_UP, PULL_DOWN);
+        builder.add(NORTH, EAST, SOUTH, WEST, UP, DOWN, PULL_NORTH, PULL_EAST, PULL_SOUTH, PULL_WEST, PULL_UP, PULL_DOWN, WATERLOGGED);
     }
 
-    protected static BooleanProperty getPropertyFromDirection(Direction direction, boolean pull) {
-        if (!pull) {
-            return switch (direction) {
-                case NORTH -> Cable.NORTH;
-                case EAST -> Cable.EAST;
-                case SOUTH -> Cable.SOUTH;
-                case WEST -> Cable.WEST;
-                case UP -> Cable.UP;
-                case DOWN -> Cable.DOWN;
-            };
-        } else {
-            return switch (direction) {
-                case NORTH -> PULL_NORTH;
-                case EAST -> PULL_EAST;
-                case SOUTH -> PULL_SOUTH;
-                case WEST -> PULL_WEST;
-                case UP -> PULL_UP;
-                case DOWN -> PULL_DOWN;
-            };
-        }
+    protected static BooleanProperty getPullPropertyFromDirection(Direction direction) {
+        return switch (direction) {
+            case NORTH -> PULL_NORTH;
+            case EAST -> PULL_EAST;
+            case SOUTH -> PULL_SOUTH;
+            case WEST -> PULL_WEST;
+            case UP -> PULL_UP;
+            case DOWN -> PULL_DOWN;
+        };
+    }
+
+    protected static BooleanProperty getConnectPropertyFromDirection(Direction direction) {
+        return switch (direction) {
+            case NORTH -> Cable.NORTH;
+            case EAST -> Cable.EAST;
+            case SOUTH -> Cable.SOUTH;
+            case WEST -> Cable.WEST;
+            case UP -> Cable.UP;
+            case DOWN -> Cable.DOWN;
+        };
     }
 
     @Override
@@ -127,7 +140,7 @@ public abstract class Cable<R extends Resource> extends Block implements EntityB
     protected @NotNull InteractionResult useItemOn(@NotNull ItemStack itemStack, @NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hitResult) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
 
-        if (!level.isClientSide() && itemStack.getItem() == Items.STICK && blockEntity instanceof CableEntity cableEntity) {
+        if (!level.isClientSide() && itemStack.getItem() == Items.STICK && blockEntity instanceof CableEntity<?> cableEntity) {
             Vec3 hitLocation = hitResult.getLocation();
             BlockPos blockPos = hitResult.getBlockPos();
             Direction clostestDirection = getClostestDirection(hitLocation, blockPos);
@@ -182,54 +195,57 @@ public abstract class Cable<R extends Resource> extends Block implements EntityB
         return clostestDirection;
     }
 
-    public static void switchMode(Level level, Direction direction, BlockPos pos, BlockState state, CableEntity cable) {
 
-        BooleanProperty pullProp = getPropertyFromDirection(direction, true);
+    /**
+     * switches the cables mode from pull to push or from push to pull mode in the given direction!
+     *
+     * @param level     current level
+     * @param direction direction from which to pull or push to
+     * @param pos       current blockpos of this block
+     * @param state     current state of this block
+     * @param cable     cable to switch mode of
+     */
+    public void switchMode(Level level, Direction direction, BlockPos pos, BlockState state, CableEntity<?> cable) {
+        List<Direction> pulls = cable.getPullDirections();
+        List<Direction> pushes = cable.getPushDirections();
+        boolean isPulling = pulls.contains(direction);
 
-        if (cable.getPullDirections().contains(direction)) {
-            cable.getPullDirections().remove(direction);
-            cable.getPushDirections().add(direction);
-            level.setBlock(pos, state.setValue(pullProp, false), UPDATE_ALL);
+        if (isPulling) {
+            pulls.remove(direction);
+            pushes.add(direction);
         } else {
-            cable.getPullDirections().add(direction);
-            cable.getPushDirections().remove(direction);
-            level.setBlock(pos, state.setValue(pullProp, true), UPDATE_ALL);
-        }
-    }
-
-
-    @Override
-    protected void onPlace(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState oldState, boolean movedByPiston) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!level.isClientSide() && blockEntity instanceof CableEntity cableEntity && cableEntity.getNetwork() == null) {
-            cableEntity.createResourceNetwork();
+            pushes.remove(direction);
+            pulls.add(direction);
         }
 
-        super.onPlace(state, level, pos, oldState, movedByPiston);
+        level.setBlock(pos, state.setValue(getPullPropertyFromDirection(direction), !isPulling), UPDATE_ALL);
+
     }
 
     @Override
     protected void neighborChanged(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
         if (!level.isClientSide()) {
-            CableEntity cableEntity = (CableEntity) level.getBlockEntity(pos);
+            BlockEntity blockEntity = level.getBlockEntity(pos);
             for (Direction direction : Direction.values()) {
                 BlockPos neighborPos = pos.relative(direction);
                 boolean shouldConnect = this.canConnect(level, neighborPos, direction.getOpposite());
                 BlockEntity neighborEntity = level.getBlockEntity(neighborPos);
-                BooleanProperty prop = getPropertyFromDirection(direction, false);
+                BooleanProperty prop = getConnectPropertyFromDirection(direction);
 
                 if (state.getValue(prop) != shouldConnect) {
-                    BooleanProperty pullProp = getPropertyFromDirection(direction, true);
-                    state = state.setValue(prop, shouldConnect).setValue(pullProp, false);
-                }
+                    state = state.setValue(prop, shouldConnect).setValue(getPullPropertyFromDirection(direction), false);
+                    if (shouldConnect
+                            && blockEntity instanceof CableEntity<?> cableEntity
+                            && neighborEntity instanceof CableEntity<?> neighborCableEntity) {
 
-                if (shouldConnect && neighborEntity instanceof CableEntity neighborCableEntity && cableEntity instanceof CableEntity fluidCable) {
+                        @SuppressWarnings("unchecked")
+                        ResourceNetwork<R> network = (ResourceNetwork<R>) cableEntity.getNetwork();
+                        @SuppressWarnings("unchecked")
+                        ResourceNetwork<R> newNetwork = (ResourceNetwork<R>) neighborCableEntity.getNetwork();
 
-                    ResourceNetwork<R> newNetwork = neighborCableEntity.getNetwork();
-                    ResourceNetwork<R> network = fluidCable.getNetwork();
-
-                    if(newNetwork != null && network != null &&  newNetwork != network){
-                        network.absorbNetwork(newNetwork);
+                        if (newNetwork != null && network != null && newNetwork != network) {
+                            network.absorbNetwork(newNetwork);
+                        }
                     }
                 }
             }
@@ -239,17 +255,31 @@ public abstract class Cable<R extends Resource> extends Block implements EntityB
     }
 
     @Override
-    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
-        if(!level.isClientSide()){
+    public boolean onDestroyedByPlayer(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull ItemStack toolStack, boolean willHarvest, @NotNull FluidState fluid) {
+        if (!level.isClientSide()) {
+            @SuppressWarnings("unchecked")
+            CableEntity<R> cable = (CableEntity<R>) level.getBlockEntity(pos);
+            assert cable != null;
+            cable.getNetwork().removeFromNetwork(cable);
+        }
+        return super.onDestroyedByPlayer(state, level, pos, player, toolStack, willHarvest, fluid);
+    }
+
+    @Override
+    protected void affectNeighborsAfterRemoval(@NotNull BlockState state, ServerLevel level, @NotNull BlockPos pos, boolean movedByPiston) {
+        if (!level.isClientSide()) {
             int cableCount = 0;
             for (Direction direction : Direction.values()) {
                 BlockPos neighborPos = pos.relative(direction);
                 BlockEntity neighborEntity = level.getBlockEntity(neighborPos);
-                if(neighborEntity instanceof CableEntity cableEntity){
-                    if(cableCount > 0){
-                        System.out.println("nnnn");
-                        cableEntity.getNetwork().destroy();
-                        cableEntity.createResourceNetwork();
+                boolean shouldConnect = this.canConnect(level, neighborPos, direction.getOpposite());
+                if (shouldConnect
+                        && neighborEntity instanceof CableEntity<?> neighborCableEntity) {
+
+                    @SuppressWarnings("unchecked")
+                    ResourceNetwork<R> network = (ResourceNetwork<R>) neighborCableEntity.getNetwork();
+                    if (cableCount > 0) {
+                        network.checkConnectedAndSplit();
                     }
                     cableCount++;
                 }
@@ -259,19 +289,14 @@ public abstract class Cable<R extends Resource> extends Block implements EntityB
         super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
     }
 
-    protected void absorbNetwork(CableEntity<R> networkCable, CableEntity<R> newCable) {
-
-
-    }
-
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, @NotNull BlockState blockState, @NotNull BlockEntityType<T> type) {
         if (level.isClientSide()) return null;
 
-        if (type == ModBlockEntities.CABLE_ENTITY_TYPE.get()) {
+        if (type == ModBlockEntities.FLUID_CABLE_ENTITY_TYPE.get()) {
             return (lvl, pos, st, be) -> {
-                if (be instanceof CableEntity cableEntity) cableEntity.tick(level, pos, blockState);
+                if (be instanceof CableEntity<?> cableEntity) cableEntity.tick(level, pos, blockState);
             };
         }
         return null;

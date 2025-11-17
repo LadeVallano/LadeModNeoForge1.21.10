@@ -2,7 +2,6 @@ package net.lade.lademod.block.entity;
 
 import net.lade.lademod.LadeMod;
 import net.lade.lademod.block.ModBlocks;
-import net.lade.lademod.block.custom.Cable;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -18,9 +17,9 @@ public class ModBlockEntities {
 
 
     //-------------------------------------------------------------BlockEntityType Registries--------------------------------------------------------------------------------------------------------------------
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CableEntity>> CABLE_ENTITY_TYPE =
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FluidCableEntity>> FLUID_CABLE_ENTITY_TYPE =
             BLOCK_ENTITIES.register("cable_entity_type", () -> new BlockEntityType<>(
-                    CableEntity::new,
+                    FluidCableEntity::new,
                     Set.of(ModBlocks.FLUID_CABLE.get()),
                     false
                     )

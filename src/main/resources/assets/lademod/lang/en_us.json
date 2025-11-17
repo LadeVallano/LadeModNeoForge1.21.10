@@ -17,5 +17,6 @@
 
   "tooltip.lademod.geogen.fluid2": "%s ",
 
-  "tooltip.lademod.geogen.fluid3": "%s "
+  "tooltip.lademod.geogen.fluid3": "%s ",
+  "creativetab.lademod": "LadeModStuff"
 }

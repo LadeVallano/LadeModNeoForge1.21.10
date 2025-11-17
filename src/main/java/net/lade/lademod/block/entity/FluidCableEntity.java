@@ -16,13 +16,12 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class FluidCableEntity extends CableEntity<FluidResource> {
 
-    FluidNetwork fluidNetwork = null;
+    FluidNetwork fluidNetwork = new FluidNetwork();
 
     public FluidCableEntity(BlockPos pos, BlockState state) {
         super(pos, state);
@@ -67,6 +66,11 @@ public class FluidCableEntity extends CableEntity<FluidResource> {
     };
 
     @Override
+    protected int getMaxRate() {
+        return MAX_FLUID_AMOUNT;
+    }
+
+    @Override
     public void createResourceNetwork() {
         new FluidNetwork(this);
     }
@@ -81,40 +85,13 @@ public class FluidCableEntity extends CableEntity<FluidResource> {
     }
 
     @Override
-    public ResourceHandler<FluidResource> getInternalResourceStorage() {
+    public ResourceHandler<FluidResource> getResourceHandler() {
         return internalFluidStorage;
     }
 
-    private void transferFluid(outputDirection fluidIO, List<Direction> directions) {
-        if (level == null || level.isClientSide()) return;
-        for (Direction direction : directions) {
-            if (direction == null) continue;
-            BlockPos neighbourPos = getBlockPos().relative(direction);
-
-            ResourceHandler<FluidResource> neighbourHandler = level.getCapability(
-                    Capabilities.Fluid.BLOCK,
-                    neighbourPos,
-                    level.getBlockState(neighbourPos),
-                    level.getBlockEntity(neighbourPos),
-                    direction.getOpposite()
-            );
-
-            if (neighbourHandler != null) {
-                ResourceHandler<FluidResource> extractHandler = internalFluidStorage;
-                ResourceHandler<FluidResource> insertHandler = internalFluidStorage;
-
-                if (fluidIO == outputDirection.PUSH) {
-                    insertHandler = neighbourHandler;
-                }
-                if (fluidIO == outputDirection.PULL) {
-                    extractHandler = neighbourHandler;
-                }
-                ModFluidUtil.transferFromTo(extractHandler, insertHandler, MAX_FLUID_AMOUNT);
-            }
-        }
-    }
-
+    @Override
     protected ResourceHandler<FluidResource> getCapabilityFrom(BlockPos neighbourPos, Direction direction) {
+        assert level != null;
         return level.getCapability(
                 Capabilities.Fluid.BLOCK,
                 neighbourPos,
@@ -122,24 +99,6 @@ public class FluidCableEntity extends CableEntity<FluidResource> {
                 level.getBlockEntity(neighbourPos),
                 direction.getOpposite()
         );
-    }
-
-    @Override
-    protected void saveAdditional(@NotNull ValueOutput output) {
-        super.saveAdditional(output);
-        internalFluidStorage.serialize(output);
-    }
-
-    @Override
-    protected void loadAdditional(@NotNull ValueInput input) {
-        super.loadAdditional(input);
-        internalFluidStorage.deserialize(input);
-    }
-
-    @Override
-    public void tick(Level level, BlockPos pos, BlockState blockState) {
-        transferFluid(outputDirection.PUSH, pushDirections);
-        transferFluid(outputDirection.PULL, pullDirections);
     }
 
 }

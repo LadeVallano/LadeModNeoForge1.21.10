@@ -1,6 +1,5 @@
 package net.lade.lademod.block.entity;
 
-import net.lade.lademod.ResourceNetwork.FluidNetwork;
 import net.lade.lademod.ResourceNetwork.ResourceNetwork;
 import net.lade.lademod.util.ModResourceUtil;
 import net.minecraft.core.BlockPos;
@@ -12,64 +11,53 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.fluid.FluidResource;
-import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.resource.Resource;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
-public class CableEntity<R extends Resource> extends BlockEntity {
+public abstract class CableEntity<R extends Resource> extends BlockEntity {
 
-    public ResourceHandler<R> getInternalResourceStorage() {
-        return null;
-    }
+    public abstract ResourceHandler<R> getResourceHandler();
 
-    public void createResourceNetwork() {
-        if(this instanceof FluidCableEntity fl){
-            new FluidNetwork(fl);
-        }
-
-    }
+    public abstract void createResourceNetwork();
 
 
     public CableEntity(BlockPos pos, BlockState state) {
-        this(ModBlockEntities.CABLE_ENTITY_TYPE.get(), pos, state);
+        this(ModBlockEntities.FLUID_CABLE_ENTITY_TYPE.get(), pos, state);
     }
 
     public CableEntity(BlockEntityType<?> entityType, BlockPos blockPos, BlockState blockState) {
         super(entityType, blockPos, blockState);
     }
 
-
-    public ResourceNetwork<R> getNetwork() {
-        return null;
+    @Override
+    public void onLoad() {
+        getNetwork().addToNetwork(this);
+        super.onLoad();
     }
 
-    public void setNetwork(ResourceNetwork<R> tResourceNetwork) {
+    public abstract ResourceNetwork<R> getNetwork();
 
-    }
+    public abstract void setNetwork(ResourceNetwork<R> tResourceNetwork);
 
     public enum outputDirection {
         PUSH, PULL
     }
 
     public void tick(Level level, BlockPos pos, BlockState blockState) {
+        transferResource(outputDirection.PUSH, getPushDirections());
+        transferResource(outputDirection.PULL, getPullDirections());
     }
 
-    protected int getMaxCap(){
-        return 0;
-    }
+    protected abstract int getMaxRate();
 
     protected ResourceHandler<R> getCapabilityFrom(BlockPos neighbourPos, Direction direction) {
         return null;
     }
 
-    private void transferFluid(outputDirection fluidIO, List<Direction> directions) {
+    protected void transferResource(outputDirection fluidIO, List<Direction> directions) {
         if (level == null || level.isClientSide()) return;
         for (Direction direction : directions) {
             if (direction == null) continue;
@@ -78,8 +66,8 @@ public class CableEntity<R extends Resource> extends BlockEntity {
             ResourceHandler<R> neighbourHandler = getCapabilityFrom(neighbourPos, direction);
 
             if (neighbourHandler != null) {
-                ResourceHandler<R> extractHandler = getInternalResourceStorage();
-                ResourceHandler<R> insertHandler = getInternalResourceStorage();
+                ResourceHandler<R> extractHandler = getResourceHandler();
+                ResourceHandler<R> insertHandler = getResourceHandler();
 
                 if (fluidIO == outputDirection.PUSH) {
                     insertHandler = neighbourHandler;
@@ -87,9 +75,24 @@ public class CableEntity<R extends Resource> extends BlockEntity {
                 if (fluidIO == outputDirection.PULL) {
                     extractHandler = neighbourHandler;
                 }
-                ModResourceUtil.transferFromTo(extractHandler, insertHandler, getMaxCap());
+                ModResourceUtil.transferFromTo(extractHandler, insertHandler, getMaxRate());
             }
         }
+    }
+
+    public Set<CableEntity<R>> getAdjacentCablesInNetwork(){
+        if (level == null || level.isClientSide()) return Collections.emptySet();
+        Set<CableEntity<R>> adjacentCables = new HashSet<>();
+
+        for (Direction direction : Direction.values()) {
+            BlockPos neighbourPos = getBlockPos().relative(direction);
+            BlockEntity neighbourEntity = level.getBlockEntity(neighbourPos);
+            if(neighbourEntity instanceof CableEntity<?> neighborCable && neighborCable.getNetwork() == this.getNetwork()){
+                adjacentCables.add((CableEntity<R>) neighborCable);
+            }
+        }
+
+        return adjacentCables;
     }
 
     protected List<Direction> pullDirections = new ArrayList<>(6);
@@ -112,6 +115,7 @@ public class CableEntity<R extends Resource> extends BlockEntity {
         for (Direction pullDirection : pullDirections) {
             pullDirectionsList.add(pullDirection);
         }
+
         for (Direction pushDirection : pushDirections) {
             pushDirectionsList.add(pushDirection);
         }
@@ -140,6 +144,8 @@ public class CableEntity<R extends Resource> extends BlockEntity {
     public List<Direction> getPushDirections() {
         return pushDirections;
     }
+
+
 }
 
 

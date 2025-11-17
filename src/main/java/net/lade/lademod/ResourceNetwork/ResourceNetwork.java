@@ -1,29 +1,24 @@
 package net.lade.lademod.ResourceNetwork;
 
-import net.lade.lademod.block.custom.Cable;
 import net.lade.lademod.block.entity.CableEntity;
-import net.lade.lademod.block.entity.FluidCableEntity;
-import net.lade.lademod.util.ModFluidUtil;
-import net.lade.lademod.util.ModResourceUtil;
+import net.minecraft.world.level.saveddata.SavedData;
 import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
 import net.neoforged.neoforge.transfer.ResourceStacksResourceHandler;
-import net.neoforged.neoforge.transfer.fluid.FluidResource;
-import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.resource.Resource;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-public abstract class ResourceNetwork<R extends Resource> {
+public abstract class ResourceNetwork<R extends Resource> extends SavedData {
     protected final List<CableEntity<R>> cables = new ArrayList<>();
 
     protected int totalCapacity;
     protected int totalAmount;
-    
-    public ResourceNetwork(){
 
+    public ResourceNetwork(){
     }
+    protected abstract ResourceNetwork<R> createNetwork(CableEntity<R> entity);
+
+
 
     ResourceStacksResourceHandler<R> networkHandler;
 
@@ -34,15 +29,15 @@ public abstract class ResourceNetwork<R extends Resource> {
     public void addToNetwork(CableEntity<R>  cable) {
         cables.add(cable);
         cable.setNetwork(this);
-        ResourceHandler<R> handler = cable.getInternalResourceStorage();
+        ResourceHandler<R> handler = cable.getResourceHandler();
         for (int i = 0; i < handler.size(); i++) {
             int capacity = handler.getCapacityAsInt(i, getEmptyResource());
-            totalCapacity += handler.getCapacityAsInt(i, getEmptyResource());
+            totalCapacity += capacity;
         }
     }
 
     public void removeFromNetwork(CableEntity<R>  cable) {
-        ResourceHandler<R>  handler = cable.getInternalResourceStorage();
+        ResourceHandler<R>  handler = cable.getResourceHandler();
         for (int i = 0; i < handler.size(); i++) {
             totalCapacity -= handler.getCapacityAsInt(i, getEmptyResource());
         }
@@ -65,6 +60,48 @@ public abstract class ResourceNetwork<R extends Resource> {
         for (CableEntity<R> cable : cablesToMove) {
             removeFromNetwork(cable);
             cable.createResourceNetwork();
+        }
+    }
+
+    private void splitNetwork(List<CableEntity<R>> cables){
+        CableEntity<R> firstCable = cables.removeFirst();
+        ResourceNetwork<R> network = createNetwork(firstCable);
+        for (CableEntity<R> cable : cables) {
+            network.addToNetwork(cable);
+            removeFromNetwork(cable);
+        }
+    }
+
+    public void checkConnectedAndSplit(){
+
+        if (cables.isEmpty()) return;
+
+        CableEntity<R> startCable = cables.getFirst();
+
+        Queue<CableEntity<R>> queue = new LinkedList<>();
+        Set<CableEntity<R>> visited = new HashSet<>();
+
+        queue.add(startCable);
+        visited.add(startCable);
+
+        while (!queue.isEmpty()) {
+            CableEntity<R> current = queue.poll();
+
+            // Iterate over neighbors of the current cable
+            for (CableEntity<R> neighbor : current.getAdjacentCablesInNetwork()) {
+
+                // CRITICAL: Ensure we are not using the cable being removed
+                if (!visited.contains(neighbor)) {
+                    visited.add(neighbor);
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        System.out.println(visited.size() + " " + cables.size());
+        boolean connected = visited.size() == cables.size();
+        if(!connected){
+            splitNetwork(new ArrayList<>(visited));
         }
     }
 }

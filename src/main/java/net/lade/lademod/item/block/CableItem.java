@@ -8,6 +8,8 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class CableItem extends BlockItem {
@@ -22,6 +24,9 @@ public abstract class CableItem extends BlockItem {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
 
+        FluidState fluidState = context.getLevel().getFluidState(pos);
+        boolean isWater = fluidState.getType() == Fluids.WATER;
+
         return defaultState
                 .setValue(FluidCable.NORTH, canConnect(level, pos.north(), Direction.NORTH))
                 .setValue(FluidCable.EAST, canConnect(level, pos.east(), Direction.EAST))
@@ -34,7 +39,8 @@ public abstract class CableItem extends BlockItem {
                 .setValue(FluidCable.PULL_EAST, false)
                 .setValue(FluidCable.PULL_WEST, false)
                 .setValue(FluidCable.PULL_UP, false)
-                .setValue(FluidCable.PULL_DOWN, false);
+                .setValue(FluidCable.PULL_DOWN, false)
+                .setValue(FluidCable.WATERLOGGED, isWater);
     }
 
     protected abstract boolean canConnect(Level level, BlockPos pos, Direction direction);

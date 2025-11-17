@@ -1,7 +1,5 @@
 package net.lade.lademod.block.custom;
 
-import net.lade.lademod.ResourceNetwork.ResourceNetwork;
-import net.lade.lademod.block.entity.CableEntity;
 import net.lade.lademod.block.entity.FluidCableEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -27,7 +25,7 @@ public class FluidCable extends Cable<FluidResource> {
 
     @Override
     protected boolean canConnect(Level level, BlockPos pos, Direction direction) {
-        return level.getBlockEntity(pos) instanceof CableEntity || level.getCapability(Capabilities.Fluid.BLOCK, pos, level.getBlockState(pos), level.getBlockEntity(pos), direction.getOpposite()) != null;
+        return level.getBlockEntity(pos) instanceof FluidCableEntity || level.getCapability(Capabilities.Fluid.BLOCK, pos, level.getBlockState(pos), level.getBlockEntity(pos), direction.getOpposite()) != null;
     }
 
 
